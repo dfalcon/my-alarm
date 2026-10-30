@@ -15,7 +15,8 @@ from pathlib import Path
 from telethon import TelegramClient, events
 
 HERE = Path(__file__).parent
-env = dict(l.split("=", 1) for l in (HERE / ".env").read_text().split() if "=" in l)
+ENV_FILE = HERE / ".env"
+env = dict(l.split("=", 1) for l in ENV_FILE.read_text().split() if "=" in l) if ENV_FILE.exists() else {}
 
 SOURCE = int(env.get("SOURCE", "-1001673474387"))  # TLk News
 TARGET = int(env.get("TARGET", "-5124807835"))  # 🚨 Тривога
@@ -43,21 +44,26 @@ def make_client(name: str) -> TelegramClient:
 
 async def login():
     import qrcode, getpass
-    from telethon.errors import SessionPasswordNeededError
+    from telethon.errors import SessionPasswordNeededError, PasswordHashInvalidError
     client = make_client("user")
     await client.connect()
-    while True:
-        qr = await client.qr_login()
-        q = qrcode.QRCode(border=1); q.add_data(qr.url); q.print_ascii(invert=True)
-        print("Телефон: Налаштування → Пристрої → Підключити пристрій, відскануйте QR")
-        try:
-            await qr.wait(timeout=60)
-            break
-        except asyncio.TimeoutError:
-            print("QR прострочено, новий:")
-        except SessionPasswordNeededError:
-            await client.sign_in(password=getpass.getpass("Хмарний пароль 2FA: "))
-            break
+    try:
+        while True:
+            qr = await client.qr_login()  # якщо QR уже відскановано, одразу кидає SessionPasswordNeeded
+            q = qrcode.QRCode(border=1); q.add_data(qr.url); q.print_ascii(invert=True)
+            print("Телефон: Налаштування → Пристрої → Підключити пристрій, відскануйте QR")
+            try:
+                await qr.wait(timeout=60)
+                break
+            except asyncio.TimeoutError:
+                print("QR прострочено, новий:")
+    except SessionPasswordNeededError:
+        while True:
+            try:
+                await client.sign_in(password=getpass.getpass("Хмарний пароль 2FA: "))
+                break
+            except PasswordHashInvalidError:
+                print("Невірний пароль, ще раз")
     print("Увійшли як", (await client.get_me()).first_name)
 
 
