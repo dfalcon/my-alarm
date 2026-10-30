@@ -7,9 +7,10 @@
   alarm.py --login   вхід акаунта через QR (читає канал)
   alarm.py --test    самоперевірка ключових слів
 
-Пересилає з власного акаунта: інші учасники групи отримують сповіщення, сам відправник — ні.
+Пересилає з власного акаунта в групу (сповіщення для інших) і собі нагадуванням у «Збережене» (сповіщення для себе).
 """
 import asyncio, re, sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from telethon import TelegramClient, events
@@ -80,6 +81,8 @@ async def main():
         if not KEYWORDS.search(text):
             return
         await event.forward_to(TARGET)
+        # собі: свої повідомлення не сповіщають, а нагадування в «Збереженому» — так
+        await event.forward_to("me", schedule=datetime.now(timezone.utc) + timedelta(seconds=2))
         print("→", text.replace("\n", " | "), flush=True)
 
     print("Слухаю…", flush=True)
