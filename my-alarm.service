@@ -1,0 +1,14 @@
+[Unit]
+Description=my-alarm: TLK News keyword relay
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=dfalcon
+WorkingDirectory=/home/dfalcon/projects/my-alarm
+ExecStart=/home/dfalcon/.local/bin/uv run -q alarm.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
