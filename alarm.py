@@ -82,7 +82,7 @@ async def main():
             return
         await event.forward_to(TARGET)
         # собі: свої повідомлення не сповіщають, а нагадування в «Збереженому» — так
-        await event.forward_to("me", schedule=datetime.now(timezone.utc) + timedelta(seconds=2))
+        await event.forward_to("me", schedule=datetime.now(timezone.utc) + timedelta(seconds=10))  # <10 с Telegram не сповіщає (перевірено: 5 с — тихо, 10 с — ок)
         print("→", text.replace("\n", " | "), flush=True)
 
     print("Слухаю…", flush=True)
